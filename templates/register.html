@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #f0f7f0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .form-box {
+      background-color: #fff;
+      border: 1px solid #a8d5a2;
+      border-radius: 6px;
+      padding: 30px;
+      width: 320px;
+    }
+
+    h2 {
+      color: #2e7d32;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      color: #333;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #a8d5a2;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #2e7d32;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #2e7d32;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #1b5e20;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .login-link a {
+      color: #2e7d32;
+      text-decoration: none;
+    }
+    .btn{
+      background-color: #2e7d32;
+      color: #fff;
+    }
+    .err{
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <script>
+        alert("{{ message }}");
+      </script>
+    {% endfor %}
+  {% endif %}
+  {% endwith %}
+  
+  <form class="form-box" method="POST" action="{{ url_for('register') }}" novalidate>
+    {{form.hidden_tag()}}
+    <h2>Register</h2>
+
+    {{form.username.label(class="username")}}
+
+  {% if form.username.errors %}
+   {{form.username()}}
+   <div>
+    {% for error in form.username.errors%}
+    <span class="err">{{error}}</span>
+    {%endfor%}
+   </div>
+   {%else%}
+       {{form.username(class="")}}
+  {%endif%}
+
+    
+
+     {{form.password.label(class=" ")}}
+    
+     {{form.password(class=" ")}}
+   
+     {{form.confirm_password.label(class=" ")}}
+     {{form.confirm_password(class=" ")}}
+
+  
+     {{form.submit(class="btn")}}
+    
+    <div class="login-link">
+      Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+    </div>
+  </form>
+
+</body>
+</html>
