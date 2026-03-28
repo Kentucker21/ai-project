@@ -1,8 +1,14 @@
 import flask 
-from forms import RegistrationForm,LoginForm
+from forms import RegistrationForm,LoginForm,GpsForm
 from flask import flash,redirect,url_for
 from flask_sqlalchemy import SQLAlchemy
+from pyswip import Prolog
+
 app=flask.Flask(__name__)
+
+prolog=Prolog()
+prolog.consult(r"C:\Users\kenei\OneDrive\Desktop\new coding journey 2026\AI_project\AIprolog.pl")
+
 
 app.config['SECRET_KEY']='7a1dd0ea230da38fed228844abc489fa'
 app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///site.db'
@@ -19,7 +25,11 @@ class User(db.Model):
 
 
 
-
+@app.route('/',methods=['GET', 'POST'])
+def home():
+    form = GpsForm()
+    return flask.render_template('index.html', form=form, paths=None)
+    
 
 
 @app.route('/register',methods=['GET', 'POST'])
@@ -58,15 +68,48 @@ def login():
     return flask.render_template("login.html",title='login',form=form)
 
 
-@app.route('/mainapp',methods=['GET', 'POST'])
 
+
+@app.route('/mainapp', methods=['GET', 'POST'])
 def mainapp():
-  return flask.render_template('index.html',title='Roadworks')
+    form = GpsForm()
 
+    paths = None
+    Distance = None
+    Duration = None
+    result = None
 
+    if form.validate_on_submit():
+        result_data = list(prolog.query(
+            f"dijkstra('{form.start.data}', '{form.end.data}', Path, Distance, Duration, '{form.roadtype.data}', '{form.avoid.data}')"
+        ))
+
+        if len(result_data) > 0:
+            paths = result_data[0]['Path']
+            Distance = result_data[0]['Distance']
+            Duration = result_data[0]['Duration']
+        else:
+            result = 'Could not find a route try again'
+
+    return flask.render_template(
+        'index.html',
+        title='Roadworks',
+        form=form,
+        paths=paths,
+        Distance=Distance,
+        Duration=Duration,
+        result=result
+    )
+
+  
+@app.route('/clear-list')
+def clear_list():
+    # This is the magic part: it sends the user back to the blank home page
+    return redirect(url_for('home'))
 
 @app.route('/admin',methods=['GET', 'POST'])
 def admin():
+     
      return flask.render_template('admin.html',title='admin page')
 
 
