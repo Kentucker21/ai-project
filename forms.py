@@ -54,3 +54,29 @@ class GpsForm(FlaskForm):
 
     submit=SubmitField('Confirm')
 
+%DFS
+class DfsForm(FlaskForm):
+    start=SelectField('Start',choices=[('Kingston','Kingston'),
+    ('St.Catherine','St.Catherine'),
+    ('Portland','Portland'),
+    ('St.andrew','St.andrew')
+    ],validators=[DataRequired()])
+    
+    end=SelectField('end',choices=[('Kingston','Kingston'),
+    ('St.Catherine','St.Catherine'),
+    ('Portland','Portland'),
+    ('St.andrew','St.andrew')
+    ],validators=[DataRequired()])
+    
+    roadtype=SelectField('road type',choices=[
+    ('paved','paved'),
+    ('unpaved','unpaved')
+    ],validators=[DataRequired()])
+    
+    avoid=SelectField('Avoid',choices=[
+    ('broken cistern','broken cistern'),
+    ('deep potholes','deep potholes'),
+    ('none','none')
+    ],validators=[DataRequired()])
+    
+    submit=SubmitField('Find Route')
