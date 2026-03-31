@@ -91,6 +91,29 @@ def mainapp():
         else:
             result = 'Could not find a route try again'
 
+    dfs_form = DfsForm()
+
+    if flask.request.method == 'POST' and 'dfs_submit' in flask.request.form:
+        result_data = list(prolog.query(f"dfs('{dfs_form.start.data}', '{dfs_form.end.data}', Path, Distance, Duration, '{dfs_form.roadtype.data}', '{dfs_form.avoid.data}')"))
+    
+    if len(result_data) > 0:
+        paths = result_data[0]['Path']
+        Distance = result_data[0]['Distance']
+        Duration = result_data[0]['Duration']
+    else:
+        result = 'Could not find a route try again'
+
+return flask.render_template(
+    'index.html',
+    title='Roadworks',
+    form=form,
+    dfs_form=dfs_form,
+    paths=paths,
+    Distance=Distance,
+    Duration=Duration,
+    result=result
+)
+
     return flask.render_template(
         'index.html',
         title='Roadworks',
