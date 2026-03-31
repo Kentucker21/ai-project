@@ -1,5 +1,5 @@
 import flask 
-from forms import RegistrationForm,LoginForm,GpsForm
+from forms import RegistrationForm,LoginForm,GpsForm,DfsForm
 from flask import flash,redirect,url_for
 from flask_sqlalchemy import SQLAlchemy
 from pyswip import Prolog
