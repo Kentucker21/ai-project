@@ -138,3 +138,25 @@ findshortest(S,D,C,Dist):-write('enter start'),read(S),nl,write('enter destinati
     
 
 %add5:-road(_,_,_,pav,cond,Dur,_).
+
+%DEPTH FIRST SEARCH (DFS)
+% DFS entry point(With error handling)
+dfs(Start, End, Path, Distance, Duration, TypeChoice, AvoidOption) :-
+    dfs_search([Start], End, [Start], Path, 0, Distance, 0, Duration, TypeChoice, AvoidOption), !.
+
+dfs(_, _, ['No path found'], 0, 0, _, _).
+
+% DFS search base case: reached destination
+dfs_search([End | _], End, Path, Path, Dist, Dist, Dur, Dur, _, _) :- !.
+
+% DFS search recursive case
+dfs_search([Current | Rest], End, Visited, Path, AccDist, FinalDist, AccDur, FinalDur, TypeChoice, AvoidOption) :-
+    road_cost(Current, Next, D, DurAdj, TypeChoice, AvoidOption),
+    \+ member(Next, Visited),
+    NewDist is AccDist + D,
+    NewDur is AccDur + DurAdj,
+    dfs_search([Next | [Current | Rest]], End, [Next | Visited], Path, NewDist, FinalDist, NewDur, FinalDur, TypeChoice, AvoidOption).
+
+% Backtrack if no valid neighbors
+dfs_search([_ | Rest], End, Visited, Path, AccDist, FinalDist, AccDur, FinalDur, TypeChoice, AvoidOption) :-
+    dfs_search(Rest, End, Visited, Path, AccDist, FinalDist, AccDur, FinalDur, TypeChoice, AvoidOption).
