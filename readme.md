@@ -1,5 +1,16 @@
 #Steps
 navigate to project root folder
+#step 0 (required for pyswip)
+install SWI-Prolog (Windows)
+
+download from:
+https://www.swi-prolog.org/download/stable
+
+during install, make sure SWI-Prolog is added to PATH.
+
+verify installation:
+swipl --version
+
 #step 1
 install virtual environment
 run command:
