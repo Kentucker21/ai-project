@@ -1,13 +1,41 @@
 import flask 
+import os
+import sys
 from forms import RegistrationForm,LoginForm,GpsForm
 from flask import flash,redirect,url_for
 from flask_sqlalchemy import SQLAlchemy
-from pyswip import Prolog
+
+try:
+    from pyswip import Prolog
+except Exception as exc:
+    if exc.__class__.__name__ == "SwiPrologNotFoundError":
+        print(
+            "Error: SWI-Prolog not found. Install SWI-Prolog and add its bin folder to PATH.\n"
+            "Download: https://www.swi-prolog.org/download/stable"
+        )
+        sys.exit(1)
+    raise
 
 app=flask.Flask(__name__)
 
-prolog=Prolog()
-prolog.consult(r"C:\Users\kenei\OneDrive\Desktop\new coding journey 2026\AI_project\AIprolog.pl")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROLOG_FILE = os.path.join(BASE_DIR, "AIprolog.pl")
+
+if not os.path.exists(PROLOG_FILE):
+    print(f"Error: Prolog knowledge base not found at: {PROLOG_FILE}")
+    sys.exit(1)
+
+try:
+    prolog=Prolog()
+    prolog.consult(PROLOG_FILE)
+except Exception as exc:
+    if exc.__class__.__name__ != "SwiPrologNotFoundError":
+        raise
+    print(
+        "Error: SWI-Prolog not found. Install SWI-Prolog and add its bin folder to PATH.\n"
+        "Download: https://www.swi-prolog.org/download/stable"
+    )
+    sys.exit(1)
 
 
 app.config['SECRET_KEY']='7a1dd0ea230da38fed228844abc489fa'
@@ -117,7 +145,7 @@ def admin():
         start = form.start.data
         end = form.end.data
         action = flask.request.form.get('action')
-        pl_path = r"C:\Users\kenei\OneDrive\Desktop\new coding journey 2026\AI_project\AIprolog.pl"
+        pl_path = PROLOG_FILE
  
         with open(pl_path, 'r') as f:
             lines = f.readlines()
