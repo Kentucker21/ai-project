@@ -190,6 +190,54 @@
       </div>
 
     </form>
+    <h3>Depth First Search</h3>
+    <form action="{{ url_for('mainapp') }}" method="POST">
+      {{dfs_form.hidden_tag()}}
+  
+      {{dfs_form.start.label()}}
+      {{dfs_form.start()}}
+  
+      {{dfs_form.end.label()}}
+      {{dfs_form.end()}}
+
+      {{dfs_form.roadtype.label()}}
+      {{dfs_form.roadtype()}}
+
+      {{dfs_form.avoid.label()}}
+      {{dfs_form.avoid()}}
+
+    <input type="submit" name="dfs_submit" value="Find Route">
+  
+    <a href="{{ url_for('home') }}">
+    <button type="button">Reset</button>
+    </a>
+
+    <div class="results">
+        {% if paths %}
+    <h3>Results:</h3>
+        {% for path in paths %}
+    <div>"{{ path }}"</div>
+        {% endfor %}
+        {% endif %}
+
+        {% if Distance %}
+    <div>
+      The total distance for this route is {{Distance}} km
+    </div>
+        {% endif %}
+
+        {% if Duration %}
+    <div>
+      The total time it will take to get there is {{Duration}} minutes
+    </div>
+        {% endif %}
+
+        {% if result %}
+    <div>{{result}}</div>
+        {% endif %}
+    </div>
+
+</form>
   </div>
 
 </body>
