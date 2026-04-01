@@ -53,12 +53,6 @@ def has_coords(place_name):
     return len(list(prolog.query(f"coords('{place_name}', _, _)"))) > 0
 
 
-def should_use_astar(start, end):
-    if not start or not end or start == end:
-        return False
-    return has_coords(start) and has_coords(end)
-
-
 def get_all_places():
     """Query Prolog for all places and return as (value, label) tuples."""
     places = []
@@ -160,21 +154,16 @@ def mainapp():
     if flask.request.method == 'POST':
         start = form.start.data
         end = form.end.data
+        algorithm_name = form.algorithm.data
         roadtype = form.roadtype.data
         avoid = form.avoid.data
 
-        use_astar = should_use_astar(start, end)
-        algorithm_name = 'astar' if use_astar else 'dijkstra'
+        if algorithm_name not in ('dijkstra', 'astar', 'dfs'):
+            algorithm_name = 'dijkstra'
 
         result_data = list(prolog.query(
             f"{algorithm_name}('{start}', '{end}', Path, Distance, Duration, '{roadtype}', '{avoid}')"
         ))
-
-        if len(result_data) == 0 and use_astar:
-            algorithm_name = 'dijkstra'
-            result_data = list(prolog.query(
-                f"dijkstra('{start}', '{end}', Path, Distance, Duration, '{roadtype}', '{avoid}')"
-            ))
 
         if len(result_data) > 0:
             paths = result_data[0]['Path']
@@ -182,7 +171,12 @@ def mainapp():
             Duration = result_data[0]['Duration']
             selected_path = normalize_path(paths)
             selected_route_edges = build_route_edge_details(selected_path, graph_edges)
-            algorithm_used = 'A*' if algorithm_name == 'astar' else 'Dijkstra'
+            algorithm_labels = {
+                'dijkstra': 'Dijkstra',
+                'astar': 'A*',
+                'dfs': 'DFS'
+            }
+            algorithm_used = algorithm_labels.get(algorithm_name, 'Dijkstra')
         else:
             result = 'Could not find a route try again'
 

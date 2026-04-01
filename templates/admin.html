@@ -25,7 +25,7 @@
             border: 1px solid #a8d5a2;
             border-radius: 6px;
             padding: 30px;
-            width: 380px;
+            width: 520px;
         }
  
         h1 {
@@ -93,10 +93,35 @@
             background-color: #1b5e20;
         }
  
-        .divider {
-            border: none;
-            border-top: 1px dashed #a8d5a2;
-            margin: 24px 0;
+        .tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-button {
+            padding: 8px 10px;
+            border: 1px solid #a8d5a2;
+            background-color: #f0f7f0;
+            color: #2e7d32;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            background-color: #2e7d32;
+            color: #fff;
+            border-color: #2e7d32;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
         }
     </style>
 </head>
@@ -114,84 +139,111 @@
  
         <h1>Admin Page</h1>
         <h2>What would you like to modify?</h2>
- 
-        
-        <h3>Change road condition</h3>
-        <form action="{{ url_for('admin') }}" method="post">
-            {{ form.hidden_tag() }}
-            {{ form.start.label() }}
-            {{ form.start() }}
-            {{ form.end.label() }}
-            {{ form.end() }}
-            {{ form.avoid.label() }}
-            {{ form.avoid() }}
-            <input type="hidden" name="action" value="condition">
-            <input type="submit" value="Update condition">
-        </form>
- 
-        <hr class="divider">
- 
-      
-        <h3>Change road type</h3>
-        <form action="{{ url_for('admin') }}" method="post">
-            {{ form.hidden_tag() }}
-            {{ form.start.label() }}
-            {{ form.start() }}
-            {{ form.end.label() }}
-            {{ form.end() }}
-            {{ form.roadtype.label() }}
-            {{ form.roadtype() }}
-            <input type="hidden" name="action" value="roadtype">
-            <input type="submit" value="Update road type">
-        </form>
- 
-        <hr class="divider">
- 
-   
-        <h3>Change road status</h3>
-        <form action="{{ url_for('admin') }}" method="post">
-            {{ form.hidden_tag() }}
-            {{ form.start.label() }}
-            {{ form.start() }}
-            {{ form.end.label() }}
-            {{ form.end() }}
-            {{ form.status.label() }}
-            {{ form.status() }}
-            <input type="hidden" name="action" value="status">
-            <input type="submit" value="Update status">
-        </form>
 
-        <hr class="divider">
+        <div class="tabs">
+            <button type="button" class="tab-button active" data-tab="condition">Condition</button>
+            <button type="button" class="tab-button" data-tab="roadtype">Road Type</button>
+            <button type="button" class="tab-button" data-tab="status">Status</button>
+            <button type="button" class="tab-button" data-tab="direction">Direction</button>
+            <button type="button" class="tab-button" data-tab="pothole_depth">Pothole Depth</button>
+        </div>
 
-        <h3>Change road direction</h3>
-        <form action="{{ url_for('admin') }}" method="post">
-            {{ form.hidden_tag() }}
-            {{ form.start.label() }}
-            {{ form.start() }}
-            {{ form.end.label() }}
-            {{ form.end() }}
-            {{ form.direction.label() }}
-            {{ form.direction() }}
-            <input type="hidden" name="action" value="direction">
-            <input type="submit" value="Update direction">
-        </form>
+        <div class="tab-panel active" id="tab-condition">
+            <h3>Change road condition</h3>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.start.label() }}
+                {{ form.start() }}
+                {{ form.end.label() }}
+                {{ form.end() }}
+                {{ form.avoid.label() }}
+                {{ form.avoid() }}
+                <input type="hidden" name="action" value="condition">
+                <input type="submit" value="Update condition">
+            </form>
+        </div>
 
-        <hr class="divider">
+        <div class="tab-panel" id="tab-roadtype">
+            <h3>Change road type</h3>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.start.label() }}
+                {{ form.start() }}
+                {{ form.end.label() }}
+                {{ form.end() }}
+                {{ form.roadtype.label() }}
+                {{ form.roadtype() }}
+                <input type="hidden" name="action" value="roadtype">
+                <input type="submit" value="Update road type">
+            </form>
+        </div>
 
-        <h3>Update pothole depth</h3>
-        <form action="{{ url_for('admin') }}" method="post">
-            {{ form.hidden_tag() }}
-            {{ form.start.label() }}
-            {{ form.start() }}
-            {{ form.end.label() }}
-            {{ form.end() }}
-            {{ form.pothole_depth.label() }}
-            {{ form.pothole_depth(min=0, max=12) }}
-            <input type="hidden" name="action" value="pothole_depth">
-            <input type="submit" value="Update pothole depth">
-        </form>
+        <div class="tab-panel" id="tab-status">
+            <h3>Change road status</h3>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.start.label() }}
+                {{ form.start() }}
+                {{ form.end.label() }}
+                {{ form.end() }}
+                {{ form.status.label() }}
+                {{ form.status() }}
+                <input type="hidden" name="action" value="status">
+                <input type="submit" value="Update status">
+            </form>
+        </div>
+
+        <div class="tab-panel" id="tab-direction">
+            <h3>Change road direction</h3>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.start.label() }}
+                {{ form.start() }}
+                {{ form.end.label() }}
+                {{ form.end() }}
+                {{ form.direction.label() }}
+                {{ form.direction() }}
+                <input type="hidden" name="action" value="direction">
+                <input type="submit" value="Update direction">
+            </form>
+        </div>
+
+        <div class="tab-panel" id="tab-pothole_depth">
+            <h3>Update pothole depth</h3>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.start.label() }}
+                {{ form.start() }}
+                {{ form.end.label() }}
+                {{ form.end() }}
+                {{ form.pothole_depth.label() }}
+                {{ form.pothole_depth(min=0, max=12) }}
+                <input type="hidden" name="action" value="pothole_depth">
+                <input type="submit" value="Update pothole depth">
+            </form>
+        </div>
  
     </div>
+
+    <script>
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        tabButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const tabName = button.getAttribute('data-tab');
+
+                tabButtons.forEach((btn) => btn.classList.remove('active'));
+                tabPanels.forEach((panel) => panel.classList.remove('active'));
+
+                button.classList.add('active');
+                const selectedPanel = document.getElementById(`tab-${tabName}`);
+                if (selectedPanel) {
+                    selectedPanel.classList.add('active');
+                }
+            });
+        });
+    </script>
  
 </body>
 </html>

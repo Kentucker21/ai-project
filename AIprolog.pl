@@ -52,6 +52,7 @@ road('Kingston','St.Catherine',34.7,'paved','deep potholes',4,49,open,two_way).
 road('St.Catherine','Clarendon',47.7,'paved','deep potholes',5,55,open,two_way).
 road('St.andrew','St.mary',22,'paved','none',0,35,open,one_way).
 road('St.mary','St.Ann',30,'paved','none',0,40,seasonal_blocked,two_way).
+road('St.Catherine','St.andrew',30.0,'paved','deep potholes',5,00,open,two_way).
 
 
 
