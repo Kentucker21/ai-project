@@ -25,6 +25,12 @@ class GpsForm(FlaskForm):
     start=SelectField('Start',choices=[],validators=[DataRequired()])
     end=SelectField('end',choices=[],validators=[DataRequired()])
 
+    algorithm=SelectField('Search Algorithm',choices=[
+        ('dijkstra','Dijkstra'),
+        ('astar','A*'),
+        ('dfs','DFS')
+    ],default='dijkstra')
+
     roadtype=SelectField('road type',choices=[
      ('paved','paved'),
      ('unpaved','unpaved')

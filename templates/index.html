@@ -221,6 +221,18 @@
           color: #1b5e20;
         }
 
+        .algo-note {
+          margin-top: -8px;
+          margin-bottom: 12px;
+          padding: 8px 10px;
+          font-size: 12px;
+          color: #2f4f2f;
+          background-color: #f0f7f0;
+          border: 1px solid #a8d5a2;
+          border-radius: 4px;
+          line-height: 1.4;
+        }
+
         @media (max-width: 980px) {
           .page-layout {
             grid-template-columns: 1fr;
@@ -259,6 +271,12 @@
       
       {{form.end.label()}}
       {{form.end()}}
+
+      {{form.algorithm.label()}}
+      {{form.algorithm()}}
+      <div class="algo-note">
+        Dijkstra and A* target shortest routes. DFS may return a valid route faster, but not always the shortest.
+      </div>
 
       {{form.roadtype.label()}}
       {{form.roadtype()}}
