@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField,PasswordField,SubmitField,SelectField,IntegerField
-from wtforms.validators import DataRequired,Length,Email,EqualTo
+from wtforms import StringField,PasswordField,SubmitField,SelectField,IntegerField,FloatField
+from wtforms.validators import DataRequired,Length,Email,EqualTo,NumberRange,Optional
 
 
 class RegistrationForm(FlaskForm):
@@ -55,6 +55,19 @@ class GpsForm(FlaskForm):
     ])
 
     pothole_depth=IntegerField('Pothole depth (inches)')
+
+    road_distance=FloatField('Distance (km)', validators=[Optional()])
+    road_duration=IntegerField('Travel time (min)', validators=[Optional()])
+
+    place_name=StringField('Place name')
+    new_place_name=StringField('New place name')
+    place_type=SelectField('Place type',choices=[
+        ('parish','parish'),
+        ('town','town'),
+        ('city','city')
+    ],default='parish')
+    coord_x=IntegerField('X coordinate', validators=[Optional(), NumberRange(min=0, max=860, message='X must be between 0 and 860')])
+    coord_y=IntegerField('Y coordinate', validators=[Optional(), NumberRange(min=0, max=580, message='Y must be between 0 and 580')])
 
     submit=SubmitField('Confirm')
 

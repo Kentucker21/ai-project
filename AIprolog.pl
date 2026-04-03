@@ -1,40 +1,23 @@
-place('Portland').
-place('Kingston').
-place('St.thomas').
-place('St.andrew').
-place('St.mary').
-place('St.Ann').
-place('Trelawny').
-place('St.James').
-place('Hanover').
-place('Westmoreland').
-place('St.Elizabeth').
-place('Manchester').
-place('Clarendon').
-place('St.Catherine').
+% Consolidated place data: place_info(Name, Type, X, Y)
+place_info('Portland',     parish, 650, 222).
+place_info('Kingston',     city,   585, 402).
+place_info('St.thomas',    parish, 715, 408).
+place_info('St.andrew',    parish, 575, 312).
+place_info('St.mary',      parish, 500, 155).
+place_info('St.Ann',       parish, 390, 118).
+place_info('Trelawny',     parish, 268, 118).
+place_info('St.James',     parish, 175, 138).
+place_info('Hanover',      parish, 126, 204).
+place_info('Westmoreland', parish, 115, 380).
+place_info('St.Elizabeth', parish, 215, 362).
+place_info('Manchester',   parish, 308, 348).
+place_info('Clarendon',    parish, 390, 392).
+place_info('St.Catherine', parish, 500, 356).
 
-% coordinates on SVG map (x,y) for 860x580 viewBox
-% north coast = small y (top), south coast = large y (bottom)
-% west = small x (left),       east = large x (right)
-%
-%  [Hanover][St.James][Trelawny][--St.Ann--][St.Mary ][Portland]   <- north coast
-%  [Westmoreland]                                                   <- SW corner
-%        [St.Elizabeth][Manchester][Clarendon][St.Catherine][Kingston][St.Thomas]
-%                                                   [St.Andrew]     <- inland
-coords('Hanover',      126, 204).
-coords('Westmoreland', 115, 380).
-coords('St.James',     175, 138).
-coords('Trelawny',     268, 118).
-coords('St.Ann',       390, 118).
-coords('St.mary',      500, 155).
-coords('Portland',     650, 222).
-coords('St.andrew',    575, 312).
-coords('Kingston',     585, 402).
-coords('St.thomas',    715, 408).
-coords('St.Catherine', 500, 356).
-coords('Clarendon',    390, 392).
-coords('Manchester',   308, 348).
-coords('St.Elizabeth', 215, 362).
+% Helper predicates to maintain backward compatibility
+place(Name) :- place_info(Name, _, _, _).
+place_type(Name, Type) :- place_info(Name, Type, _, _).
+coords(Name, X, Y) :- place_info(Name, _, X, Y).
 
 
 % road model
@@ -50,9 +33,12 @@ road('St.thomas','St.andrew',51,'unpaved','none',0,60,open,two_way).
 road('St.andrew','Kingston',8.5,'paved','none',0,30,open,two_way).
 road('Kingston','St.Catherine',34.7,'paved','deep potholes',4,49,open,two_way).
 road('St.Catherine','Clarendon',47.7,'paved','deep potholes',5,55,open,two_way).
+road('Clarendon','Manchester',60.0,'paved','broken cistern',0,35,open,two_way).
+road('Manchester','St.Elizabeth',40.0,'paved','broken cistern',0,40,open,two_way).
 road('St.andrew','St.mary',22,'paved','none',0,35,open,one_way).
 road('St.mary','St.Ann',30,'paved','none',0,40,seasonal_blocked,two_way).
 road('St.Catherine','St.andrew',30.0,'paved','deep potholes',5,00,open,two_way).
+road('St.Elizabeth','Hanover',50.0,'paved','broken cistern',0,60,open,two_way).
 
 
 
@@ -236,23 +222,29 @@ findshortest(S,D,C,Dist):-write('enter start'),read(S),nl,write('enter destinati
 %add5:-road(_,_,_,pav,cond,Dur,_).
 
 %DEPTH FIRST SEARCH (DFS)
-% DFS entry point(With error handling)
+% DFS entry point (returns first valid path, not guaranteed shortest)
 dfs(Start, End, Path, Distance, Duration, TypeChoice, AvoidOption) :-
-    dfs_search([Start], End, [Start], Path, 0, Distance, 0, Duration, TypeChoice, AvoidOption), !.
+    dfs_path(Start, End, [Start], RevPath, TypeChoice, AvoidOption),
+    !,
+    reverse(RevPath, Path),
+    path_totals(Path, Distance, Duration, TypeChoice, AvoidOption).
 
 dfs(_, _, ['No path found'], 0, 0, _, _).
 
-% DFS search base case: reached destination
-dfs_search([End | _], End, Path, Path, Dist, Dist, Dur, Dur, _, _) :- !.
+% DFS path search base case
+dfs_path(End, End, Visited, Visited, _, _) :- !.
 
-% DFS search recursive case
-dfs_search([Current | Rest], End, Visited, Path, AccDist, FinalDist, AccDur, FinalDur, TypeChoice, AvoidOption) :-
-    road_cost(Current, Next, D, DurAdj, TypeChoice, AvoidOption),
+% DFS path search recursive case
+dfs_path(Current, End, Visited, Path, TypeChoice, AvoidOption) :-
+    road_cost(Current, Next, _, _, TypeChoice, AvoidOption),
     \+ member(Next, Visited),
-    NewDist is AccDist + D,
-    NewDur is AccDur + DurAdj,
-    dfs_search([Next | [Current | Rest]], End, [Next | Visited], Path, NewDist, FinalDist, NewDur, FinalDur, TypeChoice, AvoidOption).
+    dfs_path(Next, End, [Next | Visited], Path, TypeChoice, AvoidOption).
 
-% Backtrack if no valid neighbors
-dfs_search([_ | Rest], End, Visited, Path, AccDist, FinalDist, AccDur, FinalDur, TypeChoice, AvoidOption) :-
-    dfs_search(Rest, End, Visited, Path, AccDist, FinalDist, AccDur, FinalDur, TypeChoice, AvoidOption).
+% Compute total distance and duration for a path
+path_totals([_], 0, 0, _, _) :- !.
+
+path_totals([From, To | Rest], TotalDist, TotalDur, TypeChoice, AvoidOption) :-
+    road_cost(From, To, Dist, DurAdj, TypeChoice, AvoidOption),
+    path_totals([To | Rest], RestDist, RestDur, TypeChoice, AvoidOption),
+    TotalDist is Dist + RestDist,
+    TotalDur is DurAdj + RestDur.

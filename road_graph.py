@@ -46,6 +46,10 @@ def build_road_network_graph(prolog):
     edges = []
     seen_edges = set()
 
+    type_map = {}
+    for row in prolog.query("place_type(Name, Type)"):
+        type_map[to_plain_value(row['Name'])] = to_plain_value(row['Type']).lower()
+
     coord_map = {}
     for row in prolog.query("coords(Name, X, Y)"):
         coord_map[to_plain_value(row['Name'])] = {
@@ -56,7 +60,7 @@ def build_road_network_graph(prolog):
     for place in prolog.query("place(Name)"):
         name = to_plain_value(place['Name'])
         pos = coord_map.get(name, {})
-        nodes[name] = {'id': name, 'label': name, **pos}
+        nodes[name] = {'id': name, 'label': name, 'placeType': type_map.get(name, 'parish'), **pos}
 
     for road in prolog.query("road(From,To,Distance,Type,Condition,PotholeDepth,TravelTime,Status,Direction)"):
         start = to_plain_value(road['From'])
@@ -70,9 +74,9 @@ def build_road_network_graph(prolog):
         direction = to_plain_value(road['Direction'])
 
         if start not in nodes:
-            nodes[start] = {'id': start, 'label': start}
+            nodes[start] = {'id': start, 'label': start, 'placeType': type_map.get(start, 'parish')}
         if end not in nodes:
-            nodes[end] = {'id': end, 'label': end}
+            nodes[end] = {'id': end, 'label': end, 'placeType': type_map.get(end, 'parish')}
 
         edge_data = {
             'from': start,

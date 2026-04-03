@@ -100,6 +100,13 @@
             margin-bottom: 16px;
         }
 
+        .helper {
+            font-size: 12px;
+            color: #4b6f4b;
+            margin-top: -6px;
+            margin-bottom: 10px;
+        }
+
         .tab-button {
             padding: 8px 10px;
             border: 1px solid #a8d5a2;
@@ -146,6 +153,10 @@
             <button type="button" class="tab-button" data-tab="status">Status</button>
             <button type="button" class="tab-button" data-tab="direction">Direction</button>
             <button type="button" class="tab-button" data-tab="pothole_depth">Pothole Depth</button>
+            <button type="button" class="tab-button" data-tab="add_place">Add Place</button>
+            <button type="button" class="tab-button" data-tab="add_road">Add Road</button>
+            <button type="button" class="tab-button" data-tab="edit_place">Edit Place</button>
+            <button type="button" class="tab-button" data-tab="remove_place">Remove Place</button>
         </div>
 
         <div class="tab-panel active" id="tab-condition">
@@ -220,6 +231,83 @@
                 {{ form.pothole_depth(min=0, max=12) }}
                 <input type="hidden" name="action" value="pothole_depth">
                 <input type="submit" value="Update pothole depth">
+            </form>
+        </div>
+
+        <div class="tab-panel" id="tab-add_road">
+            <h3>Add road</h3>
+            <div class="helper">Select both places, fill in all road properties, then submit.</div>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.start.label(text='From') }}
+                {{ form.start() }}
+                {{ form.end.label(text='To') }}
+                {{ form.end() }}
+                {{ form.road_distance.label() }}
+                {{ form.road_distance(placeholder='e.g. 34.7', step='0.1', min='0.1') }}
+                {{ form.roadtype.label() }}
+                {{ form.roadtype() }}
+                {{ form.avoid.label(text='Condition') }}
+                {{ form.avoid() }}
+                {{ form.pothole_depth.label() }}
+                {{ form.pothole_depth(min=0, max=12, value=0) }}
+                {{ form.road_duration.label() }}
+                {{ form.road_duration(placeholder='e.g. 45', min='1') }}
+                {{ form.status.label() }}
+                {{ form.status() }}
+                {{ form.direction.label() }}
+                {{ form.direction() }}
+                <input type="hidden" name="action" value="add_road">
+                <input type="submit" value="Add road">
+            </form>
+        </div>
+
+        <div class="tab-panel" id="tab-add_place">
+            <h3>Add parish / town / city</h3>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.place_name.label() }}
+                {{ form.place_name(placeholder='e.g. Mandeville') }}
+                {{ form.place_type.label() }}
+                {{ form.place_type() }}
+                {{ form.coord_x.label() }}
+                {{ form.coord_x(min=0, max=860) }}
+                {{ form.coord_y.label() }}
+                {{ form.coord_y(min=0, max=580) }}
+                <input type="hidden" name="action" value="add_place">
+                <input type="submit" value="Add place">
+            </form>
+        </div>
+
+        <div class="tab-panel" id="tab-edit_place">
+            <h3>Edit parish / town / city</h3>
+            <div class="helper">Select an existing place. New name and coordinates are optional.</div>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.start.label() }}
+                {{ form.start() }}
+                {{ form.new_place_name.label() }}
+                {{ form.new_place_name(placeholder='Leave blank to keep current name') }}
+                {{ form.place_type.label() }}
+                {{ form.place_type() }}
+                {{ form.coord_x.label() }}
+                {{ form.coord_x(min=0, max=860) }}
+                {{ form.coord_y.label() }}
+                {{ form.coord_y(min=0, max=580) }}
+                <input type="hidden" name="action" value="edit_place">
+                <input type="submit" value="Update place">
+            </form>
+        </div>
+
+        <div class="tab-panel" id="tab-remove_place">
+            <h3>Remove parish / town / city</h3>
+            <div class="helper">This also removes roads connected to the selected place.</div>
+            <form action="{{ url_for('admin') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.start.label() }}
+                {{ form.start() }}
+                <input type="hidden" name="action" value="remove_place">
+                <input type="submit" value="Remove place">
             </form>
         </div>
  

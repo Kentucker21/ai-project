@@ -185,10 +185,21 @@
           fill: #2d3c40;
         }
 
-        .node-circle {
-          fill: #2e7d32;
+        .node-shape {
           stroke: #ffffff;
           stroke-width: 1.5;
+        }
+
+        .node-parish {
+          fill: #2e7d32;
+        }
+
+        .node-town {
+          fill: #1e88e5;
+        }
+
+        .node-city {
+          fill: #8e24aa;
         }
 
         .node-label {
@@ -353,6 +364,7 @@
       <div>• One-way roads are traversable only in the defined direction.</div>
       <div>• Status <strong>closed</strong> and <strong>seasonal_blocked</strong> are treated as blocked.</div>
       <div>• Pothole depth above 3 inches is treated as deep potholes during routing.</div>
+      <div>• Node types: <strong>parish</strong> = circle, <strong>town</strong> = square, <strong>city</strong> = diamond.</div>
       <div>• Hover an edge to view distance, road type, condition, pothole depth, travel time, status, and direction.</div>
     </div>
   </div>
@@ -476,13 +488,29 @@
         return;
       }
 
-      const circle = document.createElementNS(svgNS, 'circle');
-      circle.setAttribute('cx', point.x);
-      circle.setAttribute('cy', point.y);
-      circle.setAttribute('r', 5);
-      circle.setAttribute('class', 'node-circle');
-      circle.appendChild(document.createElementNS(svgNS, 'title')).textContent = node.label;
-      svg.appendChild(circle);
+      const placeType = String(node.placeType || 'parish').toLowerCase();
+      const visualType = ['parish', 'town', 'city'].includes(placeType) ? placeType : 'parish';
+
+      let shape;
+      if (visualType === 'town') {
+        shape = document.createElementNS(svgNS, 'rect');
+        shape.setAttribute('x', point.x - 5);
+        shape.setAttribute('y', point.y - 5);
+        shape.setAttribute('width', 10);
+        shape.setAttribute('height', 10);
+      } else if (visualType === 'city') {
+        shape = document.createElementNS(svgNS, 'polygon');
+        shape.setAttribute('points', `${point.x},${point.y - 6} ${point.x + 6},${point.y} ${point.x},${point.y + 6} ${point.x - 6},${point.y}`);
+      } else {
+        shape = document.createElementNS(svgNS, 'circle');
+        shape.setAttribute('cx', point.x);
+        shape.setAttribute('cy', point.y);
+        shape.setAttribute('r', 5);
+      }
+
+      shape.setAttribute('class', `node-shape node-${visualType}`);
+      shape.appendChild(document.createElementNS(svgNS, 'title')).textContent = `${node.label} (${visualType})`;
+      svg.appendChild(shape);
 
       const label = document.createElementNS(svgNS, 'text');
       const offset = labelOffsets[node.id] || { x: 8, y: -8 };
