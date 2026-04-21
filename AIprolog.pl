@@ -1,4 +1,5 @@
-% Consolidated place data: place_info(Name, Type, X, Y)
+% ─── PLACE DATA ───────────────────────────────────────────────────────────────
+% place_info(Name, Type, X, Y) — stores each location with its map coordinates
 place_info('Portland',     parish, 650, 222).
 place_info('Kingston',     city,   585, 402).
 place_info('St.thomas',    parish, 715, 408).
@@ -14,18 +15,18 @@ place_info('Manchester',   parish, 308, 348).
 place_info('Clarendon',    parish, 390, 392).
 place_info('St.Catherine', parish, 500, 356).
 
-% Helper predicates to maintain backward compatibility
-place(Name) :- place_info(Name, _, _, _).
+% Helper predicates — derive place/1, place_type/2, and coords/3 from place_info/4
+place(Name)          :- place_info(Name, _, _, _).
 place_type(Name, Type) :- place_info(Name, Type, _, _).
-coords(Name, X, Y) :- place_info(Name, _, X, Y).
+coords(Name, X, Y)   :- place_info(Name, _, X, Y).
 
 
-% road model
+% ─── ROAD DATA ────────────────────────────────────────────────────────────────
 % road(From, To, DistanceKm, RoadType, Condition, PotholeDepthInches, TravelTimeMin, Status, Direction)
-% RoadType: paved|unpaved
-% Condition: none|'broken cistern'|'deep potholes'
-% Status: open|closed|seasonal_blocked
-% Direction: two_way|one_way
+% RoadType : paved | unpaved
+% Condition: none | 'broken cistern' | 'deep potholes'
+% Status   : open | closed | seasonal_blocked
+% Direction: two_way | one_way
 
 road('Portland','St.thomas',110,'unpaved','deep potholes',4,90,open,two_way).
 road('Portland','St.mary',70.1,'paved','broken cistern',0,90,open,two_way).
@@ -41,74 +42,84 @@ road('St.Catherine','St.andrew',30.0,'paved','deep potholes',5,00,open,two_way).
 road('St.Elizabeth','Hanover',50.0,'paved','broken cistern',0,60,open,two_way).
 
 
-
-% condition mapping
-
-
+% ─── CONDITION MAPPING ────────────────────────────────────────────────────────
+% Maps the avoid filter value from the form to the Prolog condition atom
 avoid_condition('broken cistern', 'broken cistern').
-avoid_condition('deep potholes', 'deep potholes').
+avoid_condition('deep potholes',  'deep potholes').
 avoid_condition('none', none).
 
 
-
-% road cost filter
-
-
+% ─── TRAVERSAL ────────────────────────────────────────────────────────────────
+% traversable_road/8 — a road can be used in the forward direction,
+% or in reverse if it is two_way
 traversable_road(Current, Next, Dist, Type, Cond, Depth, Dur, Status) :-
     road(Current, Next, Dist, Type, Cond, Depth, Dur, Status, _).
 
 traversable_road(Current, Next, Dist, Type, Cond, Depth, Dur, Status) :-
     road(Next, Current, Dist, Type, Cond, Depth, Dur, Status, two_way).
 
+
+% effective_condition/3 — determines the actual condition of a road segment.
+% If the stored condition is 'deep potholes', or the pothole depth exceeds 3 inches,
+% the road is treated as 'deep potholes'; otherwise the stored condition is used.
 effective_condition('deep potholes', _, 'deep potholes') :- !.
 effective_condition(_, Depth, 'deep potholes') :- Depth > 3, !.
 effective_condition(Cond, _, Cond).
 
 
+% road_cost/6 — core filter used by all three algorithms.
+% Succeeds only for roads that are: open, match the chosen surface type,
+% and do not have the condition the user wants to avoid.
+% Also adjusts travel time for bad road conditions via adjust_duration/3.
 road_cost(Current, Next, Dist, NewDur, TypeChoice, AvoidOption) :-
     traversable_road(Current, Next, Dist, Type, Cond, Depth, Dur, Status),
     Status = open,
-
-    % enforce road type
     Type = TypeChoice,
-
-    % map avoid option
     avoid_condition(AvoidOption, AvoidCond),
-
-    % filtering logic
     effective_condition(Cond, Depth, ActualCond),
-
-    ( AvoidCond = none
-    ; ActualCond \= AvoidCond
-    ),
-
+    ( AvoidCond = none ; ActualCond \= AvoidCond ),
     adjust_duration(ActualCond, Dur, NewDur).
 
 
-
-% dijstra adjustment
-
-
-adjust_duration('deep potholes', Dur, NewDur) :-
-    NewDur is Dur + 5.
-
-adjust_duration('broken cistern', Dur, NewDur) :-
-    NewDur is Dur + 5.
-
-adjust_duration('none', Dur, Dur).
+% ─── TRAVEL TIME PENALTY ──────────────────────────────────────────────────────
+% Adds 5 minutes to travel time for roads with bad conditions
+adjust_duration('deep potholes',  Dur, NewDur) :- NewDur is Dur + 5.
+adjust_duration('broken cistern', Dur, NewDur) :- NewDur is Dur + 5.
+adjust_duration('none',           Dur, Dur).
 
 
-
-% dijkstra entry point
-
-
+% ─── DIJKSTRA ─────────────────────────────────────────────────────────────────
+% Finds the shortest path by total distance using a priority queue (sorted list).
+% Entry point — initialises the queue with the start node then reverses the result path.
 dijkstra(Start, End, Path, Distance, Duration, TypeChoice, AvoidOption) :-
     dijkstra_queue([(0, Start, [Start], 0)], End, RevPath, Distance, Duration, TypeChoice, AvoidOption),
     reverse(RevPath, Path).
 
+% Base case — destination reached; return the accumulated path and cost
+dijkstra_queue([(Dist, End, Path, Dur) | _], End, Path, Dist, Dur, _, _).
 
-% A* SEARCH
+% Recursive case — expand the current node, collect neighbours, merge into queue, sort, repeat
+dijkstra_queue([(Dist, Current, Path, PrevDur) | Rest], End, FinalPath, FinalDist, FinalDur, TypeChoice, AvoidOption) :-
+    findall(
+        (NewDist, Next, [Next | Path], NewDurTotal),
+        (
+            road_cost(Current, Next, D, DurAdj, TypeChoice, AvoidOption),
+            \+ member(Next, Path),        % avoid revisiting nodes
+            NewDist is Dist + D,
+            NewDurTotal is PrevDur + DurAdj
+        ),
+        Neighbors
+    ),
+    append(Rest, Neighbors, TempQueue),
+    sort(TempQueue, SortedQueue),         % sort keeps the lowest-cost node at the front
+    dijkstra_queue(SortedQueue, End, FinalPath, FinalDist, FinalDur, TypeChoice, AvoidOption).
 
+
+% ─── A* SEARCH ────────────────────────────────────────────────────────────────
+% Finds the shortest path using a heuristic (pixel distance scaled to km)
+% to guide the search toward the goal more efficiently than Dijkstra.
+
+% Euclidean pixel distance between two nodes using their map coordinates
 coord_distance(NodeA, NodeB, PixelDistance) :-
     coords(NodeA, X1, Y1),
     coords(NodeB, X2, Y2),
@@ -116,45 +127,54 @@ coord_distance(NodeA, NodeB, PixelDistance) :-
     DY is Y1 - Y2,
     PixelDistance is sqrt(DX * DX + DY * DY).
 
+% Compute km-per-pixel ratio for a single edge
 edge_km_per_pixel(Ratio) :-
     traversable_road(From, To, DistanceKm, _, _, _, _, _),
     coord_distance(From, To, PixelDistance),
     PixelDistance > 0,
     Ratio is DistanceKm / PixelDistance.
 
+% Find the minimum km-per-pixel ratio across all edges (used to keep heuristic admissible)
 min_km_per_pixel(MinRatio) :-
     findall(R, edge_km_per_pixel(R), Ratios),
     Ratios \= [],
     min_list(Ratios, MinRatio).
 
+% Heuristic h(n) — estimated remaining distance from Node to Goal in km
 heuristic(Node, Goal, H) :-
     coord_distance(Node, Goal, PixelDistance),
     min_km_per_pixel(MinRatio),
     H is PixelDistance * MinRatio,
     !.
+heuristic(_, _, 0).  % fallback if coordinates are missing
 
-heuristic(_, _, 0).
-
+% Check whether the closed list already has a cost <= G for this node
 closed_has_better_or_equal(Node, G, Closed) :-
     member((Node, BestG), Closed),
     BestG =< G.
 
+% Remove a node's existing entry from the closed list
 remove_closed_entry(_, [], []).
 remove_closed_entry(Node, [(Node, _) | Rest], Rest) :- !.
 remove_closed_entry(Node, [Head | Rest], [Head | UpdatedRest]) :-
     remove_closed_entry(Node, Rest, UpdatedRest).
 
+% Update the closed list with the new cost for a node
 update_closed(Node, G, Closed, [(Node, G) | UpdatedClosed]) :-
     remove_closed_entry(Node, Closed, UpdatedClosed).
 
+% A* entry point
 astar(Start, End, Path, Distance, Duration, TypeChoice, AvoidOption) :-
     heuristic(Start, End, H0),
     astar_open([(H0, 0, Start, [Start], 0)], [], End, RevPath, Distance, Duration, TypeChoice, AvoidOption),
     reverse(RevPath, Path).
 
-astar_open([( _, G, End, Path, Dur) | _], _, End, Path, G, Dur, _, _) :- !.
+% Base case — goal node is at the front of the open list
+astar_open([(_, G, End, Path, Dur) | _], _, End, Path, G, Dur, _, _) :- !.
 
-astar_open([( _, G, Current, Path, Dur) | RestOpen], Closed, End, FinalPath, FinalDist, FinalDur, TypeChoice, AvoidOption) :-
+% Recursive case — if current node is already in closed with a better cost, skip it;
+% otherwise expand it, compute f = g + h for each neighbour, merge and sort the open list
+astar_open([(_, G, Current, Path, Dur) | RestOpen], Closed, End, FinalPath, FinalDist, FinalDur, TypeChoice, AvoidOption) :-
     ( closed_has_better_or_equal(Current, G, Closed) ->
         astar_open(RestOpen, Closed, End, FinalPath, FinalDist, FinalDur, TypeChoice, AvoidOption)
     ;
@@ -177,72 +197,33 @@ astar_open([( _, G, Current, Path, Dur) | RestOpen], Closed, End, FinalPath, Fin
     ).
 
 
+% ─── DEPTH FIRST SEARCH (DFS) ─────────────────────────────────────────────────
+% Explores as far as possible down each branch before backtracking.
+% Returns the first valid path found, not necessarily the shortest.
 
-
-
-
-
-dijkstra_queue([(Dist, End, Path, Dur) | _], End, Path, Dist, Dur, _, _).
-
-dijkstra_queue([(Dist, Current, Path, PrevDur) | Rest], End, FinalPath, FinalDist, FinalDur, TypeChoice, AvoidOption) :-
-
-    findall(
-        (NewDist, Next, [Next | Path], NewDurTotal),
-        (
-            road_cost(Current, Next, D, DurAdj, TypeChoice, AvoidOption),
-            \+ member(Next, Path),
-            NewDist is Dist + D,
-            NewDurTotal is PrevDur + DurAdj
-        ),
-        Neighbors
-    ),
-
-    append(Rest, Neighbors, TempQueue),
-    sort(TempQueue, SortedQueue),
-
-    dijkstra_queue(SortedQueue, End, FinalPath, FinalDist, FinalDur, TypeChoice, AvoidOption).
-
-
-
-
-
-
-
-add5(Newdur):-road(_,_,_,_,Cond,_,Dur,_,_),((Cond=='deep potholes';Cond=='broken cistern')->Newdur is Dur+5,nl,
-       write('duration is upgraded, new duration is '),write(Newdur) ;Newdur is Dur+0).
-
-
-findshortest(S,D,C,Dist):-write('enter start'),read(S),nl,write('enter destination: '),read(D),nl,
-              write('enter conditions: '),read(C),
-               
-              road(S,D,Dist,_,C,_,_,_,_).
-            
-    
-
-%add5:-road(_,_,_,pav,cond,Dur,_).
-
-%DEPTH FIRST SEARCH (DFS)
-% DFS entry point (returns first valid path, not guaranteed shortest)
+% Entry point — cuts after first solution, then calculates totals for that path
 dfs(Start, End, Path, Distance, Duration, TypeChoice, AvoidOption) :-
     dfs_path(Start, End, [Start], RevPath, TypeChoice, AvoidOption),
     !,
     reverse(RevPath, Path),
     path_totals(Path, Distance, Duration, TypeChoice, AvoidOption).
 
+% Fallback if no path exists
 dfs(_, _, ['No path found'], 0, 0, _, _).
 
-% DFS path search base case
+% Base case — current node is the destination
 dfs_path(End, End, Visited, Visited, _, _) :- !.
 
-% DFS path search recursive case
+% Recursive case — move to an unvisited neighbour and continue searching
 dfs_path(Current, End, Visited, Path, TypeChoice, AvoidOption) :-
     road_cost(Current, Next, _, _, TypeChoice, AvoidOption),
     \+ member(Next, Visited),
     dfs_path(Next, End, [Next | Visited], Path, TypeChoice, AvoidOption).
 
-% Compute total distance and duration for a path
+% Base case for path_totals — single node, no edges left
 path_totals([_], 0, 0, _, _) :- !.
 
+% Recursively sum distance and duration across each leg of the path
 path_totals([From, To | Rest], TotalDist, TotalDur, TypeChoice, AvoidOption) :-
     road_cost(From, To, Dist, DurAdj, TypeChoice, AvoidOption),
     path_totals([To | Rest], RestDist, RestDur, TypeChoice, AvoidOption),
